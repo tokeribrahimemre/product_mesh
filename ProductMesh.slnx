@@ -1,0 +1,33 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/ApiGateway/">
+    <Project Path="src/ApiGateway/ProductMesh.Gateway/ProductMesh.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Auth/">
+    <Project Path="src/Services/Auth/ProductMesh.Auth.API/ProductMesh.Auth.API.csproj" />
+    <Project Path="src/Services/Auth/ProductMesh.Auth.Application/ProductMesh.Auth.Application.csproj" />
+    <Project Path="src/Services/Auth/ProductMesh.Auth.Domain/ProductMesh.Auth.Domain.csproj" />
+    <Project Path="src/Services/Auth/ProductMesh.Auth.Infrastructure/ProductMesh.Auth.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Log/">
+    <Project Path="src/Services/Log/ProductMesh.Log.API/ProductMesh.Log.API.csproj" />
+    <Project Path="src/Services/Log/ProductMesh.Log.Application/ProductMesh.Log.Application.csproj" />
+    <Project Path="src/Services/Log/ProductMesh.Log.Domain/ProductMesh.Log.Domain.csproj" />
+    <Project Path="src/Services/Log/ProductMesh.Log.Infrastructure/ProductMesh.Log.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Product/">
+    <Project Path="src/Services/Product/ProductMesh.Product.API/ProductMesh.Product.API.csproj" />
+    <Project Path="src/Services/Product/ProductMesh.Product.Application/ProductMesh.Product.Application.csproj" />
+    <Project Path="src/Services/Product/ProductMesh.Product.Domain/ProductMesh.Product.Domain.csproj" />
+    <Project Path="src/Services/Product/ProductMesh.Product.Infrastructure/ProductMesh.Product.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/ProductMesh.Shared/ProductMesh.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ProductMesh.Auth.Tests/ProductMesh.Auth.Tests.csproj" />
+    <Project Path="tests/ProductMesh.Log.Tests/ProductMesh.Log.Tests.csproj" />
+    <Project Path="tests/ProductMesh.Product.Tests/ProductMesh.Product.Tests.csproj" />
+  </Folder>
+</Solution>

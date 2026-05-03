@@ -1,0 +1,6 @@
+@ProductMesh.Product.API_HostAddress = http://localhost:5261
+
+GET {{ProductMesh.Product.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

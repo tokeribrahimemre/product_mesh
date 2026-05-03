@@ -1,0 +1,162 @@
+# ProductMesh Microservices — Docker Compose
+# Infrastructure: SQL Server, Redis, RabbitMQ, Seq
+# Services: Auth, Product, Log, Gateway
+
+services:
+  # ─── Infrastructure ───
+  sqlserver:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.settimeout(2); s.connect(('localhost',1433)); s.close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  seq:
+    image: datalust/seq:latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=Admin123!
+    ports:
+      - "5341:5341"
+      - "8081:80"
+    volumes:
+      - seq-data:/data
+
+  # ─── Microservices ───
+  auth-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.auth
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__AuthDb=Server=sqlserver,1433;Database=ProductMesh_Auth;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - Jwt__Secret=ProductMeshSuperSecretKeyThatIsLongEnough2024!
+      - Jwt__Issuer=ProductMesh.Auth
+      - Jwt__Audience=ProductMesh
+      - SEQ_URL=http://seq:5341
+    ports:
+      - "5001:5001"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      seq:
+        condition: service_started
+
+  product-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.product
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5002
+      - ConnectionStrings__ProductDb=Server=sqlserver,1433;Database=ProductMesh_Product;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__Secret=ProductMeshSuperSecretKeyThatIsLongEnough2024!
+      - Jwt__Issuer=ProductMesh.Auth
+      - Jwt__Audience=ProductMesh
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+      - SEQ_URL=http://seq:5341
+    ports:
+      - "5002:5002"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_started
+
+  log-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.log
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5003
+      - ConnectionStrings__LogDb=Server=sqlserver,1433;Database=ProductMesh_Log;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - Jwt__Secret=ProductMeshSuperSecretKeyThatIsLongEnough2024!
+      - Jwt__Issuer=ProductMesh.Auth
+      - Jwt__Audience=ProductMesh
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+      - SEQ_URL=http://seq:5341
+    ports:
+      - "5003:5003"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_started
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5010
+      - Jwt__Secret=ProductMeshSuperSecretKeyThatIsLongEnough2024!
+      - Jwt__Issuer=ProductMesh.Auth
+      - Jwt__Audience=ProductMesh
+      - SEQ_URL=http://seq:5341
+      # Override YARP cluster addresses to Docker service names
+      - ReverseProxy__Clusters__auth-cluster__Destinations__auth-api__Address=http://auth-api:5001
+      - ReverseProxy__Clusters__product-cluster__Destinations__product-api__Address=http://product-api:5002
+      - ReverseProxy__Clusters__log-cluster__Destinations__log-api__Address=http://log-api:5003
+    ports:
+      - "5010:5010"
+    depends_on:
+      - auth-api
+      - product-api
+      - log-api
+
+volumes:
+  sqlserver-data:
+  redis-data:
+  rabbitmq-data:
+  seq-data:

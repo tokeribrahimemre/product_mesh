@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["src/Shared/ProductMesh.Shared/ProductMesh.Shared.csproj", "src/Shared/ProductMesh.Shared/"]
+COPY ["src/Services/Auth/ProductMesh.Auth.Domain/ProductMesh.Auth.Domain.csproj", "src/Services/Auth/ProductMesh.Auth.Domain/"]
+COPY ["src/Services/Auth/ProductMesh.Auth.Application/ProductMesh.Auth.Application.csproj", "src/Services/Auth/ProductMesh.Auth.Application/"]
+COPY ["src/Services/Auth/ProductMesh.Auth.Infrastructure/ProductMesh.Auth.Infrastructure.csproj", "src/Services/Auth/ProductMesh.Auth.Infrastructure/"]
+COPY ["src/Services/Auth/ProductMesh.Auth.API/ProductMesh.Auth.API.csproj", "src/Services/Auth/ProductMesh.Auth.API/"]
+RUN dotnet restore "src/Services/Auth/ProductMesh.Auth.API/ProductMesh.Auth.API.csproj"
+COPY . .
+WORKDIR "/src/src/Services/Auth/ProductMesh.Auth.API"
+RUN dotnet build -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "ProductMesh.Auth.API.dll"]
