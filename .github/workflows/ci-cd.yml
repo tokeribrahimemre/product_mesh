@@ -13,11 +13,13 @@ on:
 
 env:
   DOTNET_VERSION: '10.0.x'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service:
           - { name: 'Auth', path: 'src/Services/Auth/ProductMesh.Auth.API', test: 'tests/ProductMesh.Auth.Tests' }
@@ -39,6 +41,10 @@ jobs:
 
       - name: Build ${{ matrix.service.name }}
         run: dotnet build ${{ matrix.service.path }} -c Release --no-restore
+
+      - name: Build Tests ${{ matrix.service.name }}
+        if: matrix.service.test != ''
+        run: dotnet build ${{ matrix.service.test }} -c Release --no-restore
 
       - name: Test ${{ matrix.service.name }}
         if: matrix.service.test != ''
