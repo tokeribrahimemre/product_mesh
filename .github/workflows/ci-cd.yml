@@ -13,7 +13,7 @@ on:
 
 env:
   DOTNET_VERSION: '10.0.x'
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   build-and-test:
@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - { name: 'Auth', path: 'src/Services/Auth/ProductMesh.Auth.API', test: 'tests/ProductMesh.Auth.Tests' }
-          - { name: 'Product', path: 'src/Services/Product/ProductMesh.Product.API', test: 'tests/ProductMesh.Product.Tests' }
-          - { name: 'Log', path: 'src/Services/Log/ProductMesh.Log.API', test: 'tests/ProductMesh.Log.Tests' }
-          - { name: 'Gateway', path: 'src/ApiGateway/ProductMesh.Gateway', test: '' }
+          - { name: 'Auth', test: 'tests/ProductMesh.Auth.Tests' }
+          - { name: 'Product', test: 'tests/ProductMesh.Product.Tests' }
+          - { name: 'Log', test: 'tests/ProductMesh.Log.Tests' }
+          - { name: 'Gateway', test: '' }
 
     steps:
       - name: Checkout
@@ -37,14 +37,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ProductMesh.slnx
 
-      - name: Build ${{ matrix.service.name }}
-        run: dotnet build ${{ matrix.service.path }} -c Release --no-restore
-
-      - name: Build Tests ${{ matrix.service.name }}
-        if: matrix.service.test != ''
-        run: dotnet build ${{ matrix.service.test }} -c Release --no-restore
+      - name: Build Solution
+        run: dotnet build ProductMesh.slnx -c Release --no-restore
 
       - name: Test ${{ matrix.service.name }}
         if: matrix.service.test != ''
